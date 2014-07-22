@@ -34,6 +34,8 @@ import octoprint.gcodefiles as gcodefiles
 import octoprint.util as util
 import octoprint.users as users
 import octoprint.events as events
+import octoprint.gpio as gpio
+import octoprint.monitor as monitor
 import octoprint.timelapse
 
 
@@ -126,7 +128,11 @@ class Server():
 
 		eventManager = events.eventManager()
 		gcodeManager = gcodefiles.GcodeManager()
+		gpioManager = gpio.gpioManager()
+		monitorManager = monitor.monitorManager()
 		printer = Printer(gcodeManager)
+		gpioManager.setPrinter(printer)
+		monitorManager.setPrinter(printer)
 
 		# configure timelapse
 		octoprint.timelapse.configureTimelapse()
