@@ -262,3 +262,24 @@ class GcodeCommandTrigger(CommandTrigger):
 	def executeCommand(self, command):
 		self._logger.debug("Executing GCode command: %s" % command)
 		self._printer.commands(command.split(","))
+		
+class SerialMonitor(GenericEventListener):
+	"""
+	Send the events on the LCD screen
+	"""
+	def __init__(self, printer):
+		GenericEventListener.__init__(self)
+
+		events = ["Startup", "Connected", "Disconnected", "ClientOpen", "ClientClosed", "PowerOn", "PowerOff", "Upload",
+				  "FileSelected", "TransferStarted", "TransferDone", "PrintStarted", "PrintDone", "PrintFailed",
+				  "Cancelled", "Home", "ZChange", "Paused", "Waiting", "Cooling", "Alert", "Conveyor", "Eject",
+				  "CaptureStart", "CaptureDone", "MovieDone", "EStop", "Error"]
+		self.subscribe(events)
+
+	def eventCallback(self, event, payload):
+		GenericEventListener.eventCallback(self, event, payload)
+		if(payload != None):
+			monitorManager().printEvent(str(event), str(payload))
+		else:
+			monitorManager().printEvent(str(event))
+
