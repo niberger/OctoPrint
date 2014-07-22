@@ -31,14 +31,25 @@ class MonitorManager(object):
 		self._eventStep = 0
 
 		self._printer = None
+		self._data = None
+		self._temp = None
 
 		self._worker = threading.Thread(target=self._work)
 		self._worker.daemon = True
 		self._worker.start()
 
 	def setPrinter(self, printer):
+		if self._printer is not None:
+			self._printer.unregisterCallback(this)
 		self._printer = printer
+		self._printer.registerCallback(self)
  
+	def sendCurrentData(self, data):
+		self._data = data
+
+	def addTemperature(self, data):
+		self._temp = data
+		
 	def printEvent(self, line1, line2 = ""):
 		self._eventLine1 = line1
 		self._eventLine2 = line2
@@ -48,12 +59,12 @@ class MonitorManager(object):
 		offset = 0
 		maxlen = 19
 		if(len(line2) > maxlen):
-			step_mod = step % (len(line2) + 6) - 3
+			step_mod = (step % (len(line2) - maxlen + 8)) - 4
 			if(step_mod < 0):
 				offset = 0
 			elif(step_mod > len(line2) - maxlen):
 				offset = len(line2) - maxlen
-			else:			
+			else:
 				offset = step_mod
 		
 		line1cut = line1[ :maxlen]
@@ -62,7 +73,7 @@ class MonitorManager(object):
 		serial_cmd = ""
 		serial_cmd += chr(0x14) #cursor off
 		serial_cmd += chr(0x10)+chr(0x00) #cursor at the begin
-		serial_cmd += line1cut + " " * (maxlen - len(line1cut))
+		serial_cmd += line1cut + " " * (maxlen - len(line1cut) + 1)
 		serial_cmd += chr(0x10)+chr(0x14) #cursor at the 2nd line
 		serial_cmd += line2cut + " " * (maxlen - len(line2cut)) #for now I cant control the last char without an unexpected newline
 
@@ -70,15 +81,17 @@ class MonitorManager(object):
 		self._port.write(serial_cmd)
 
 	def printStatus(self, step):
-		if(self._printer != None):
-			state = self._printer.getCurrentData()
-			self.printMsg("",str(state))
+		if(self._data != None):
+			state = str(self._data["state"]["stateString"])
+			tempMsg = "T:"+str(int(self._temp["temp"]))+"/"+str(int(self._temp["targetTemp"]))
+			tempBedMsg = "B:"+str(int(self._temp["bedTemp"]))+"/"+str(int(self._temp["targetBedTemp"]))
+			self.printMsg(state, tempMsg.ljust(10) + tempBedMsg)
 
 	def _work(self):
 		self._eventStep = 0
 		while True:
 			self._eventStep = self._eventStep + 1
-			if(self._eventStep < 40):
+			if(self._eventStep < 30):
 				self.printMsg(self._eventLine1, self._eventLine2, self._eventStep)
 			else:
 				self.printStatus(self._eventStep)
