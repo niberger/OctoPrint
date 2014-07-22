@@ -10,6 +10,7 @@ import subprocess
 import Queue
 import threading
 
+from octoprint.monitor import monitorManager
 from octoprint.settings import settings
 
 # singleton
