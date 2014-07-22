@@ -140,6 +140,7 @@ class Server():
 		# setup system and gcode command triggers
 		events.SystemCommandTrigger(printer)
 		events.GcodeCommandTrigger(printer)
+		events.SerialMonitor(printer)
 		if self._debug:
 			events.DebugEventListener()
 
